@@ -7,6 +7,17 @@ show the current step on top of the game.
 
 Windows only. Runs on your own PC: a small local web server (127.0.0.1) and an app window.
 
+## What it looks like
+An answer, shown one step at a time (Next / Back, or F7 in game):
+
+![Game Guide main window showing step 2 of 4 of an answer for a made-up game](docs/screenshots/answer-steps.png)
+
+The "Choose your brain" panel, which opens on the first start:
+
+![The Choose your brain panel with Claude, Gemini and Local, each with its own status](docs/screenshots/choose-your-brain.png)
+
+(Screenshots use a made-up game and made-up answers.)
+
 ## What you need
 - Windows 10 or 11.
 - Python 3.12 (64-bit) from python.org, with tkinter (the default install has it).
