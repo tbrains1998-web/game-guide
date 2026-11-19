@@ -1,0 +1,12 @@
+{
+  "_note": "Default word lists for the RE Engine Sense helper. Words match parts of full type names (e.g. app.GmDoorV3). A game profile ADDS to these lists (set \"replace_words\": true in the game profile to use only its own lists). Unknown keys are ignored.",
+  "discovery": {"mode": "auto", "min_interval_s": 120, "move_m": 200, "budget_s": 0.05, "max_interval_s": 600},
+  "item_words": ["Item", "Pickup", "Loot", "Drop"],
+  "collectible_words": ["Chest", "TreasureBox", "Treasure", "Safe", "Locker", "Collect"],
+  "door_words": ["Door", "Gate", "Shutter", "Lock", "Barricade"],
+  "exclude_words": ["Param", "Data", "Setting", "Manager", "Gui", "Sound", "Effect", "Driver",
+                    "BehaviorTree", "Track", "Clock", "LockOn", "Lockon", "Catalog", "Icon",
+                    "Character", "Human", "Npc", "Enemy"],
+  "not_items": [],
+  "fov_axis": "v"
+}

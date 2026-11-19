@@ -1,0 +1,31 @@
+# your own settings and data (see README "Your data")
+config.json
+config.json.*
+games/
+last_game.txt
+.edge-profile/
+models/
+
+# logs
+*.log
+startup_diag.txt
+
+# Sense: backups, third-party downloads, signature files you add yourself
+sense/backup/
+sense/downloads/
+sense/ue4ss-signatures-pbz/
+
+# caches, test output, build output
+__pycache__/
+*.pyc
+.venv/
+venv/
+tests/out*/
+build/
+dist/
+
+# old copies and archives
+*.bak*
+*.orig
+*.exe
+*.zip

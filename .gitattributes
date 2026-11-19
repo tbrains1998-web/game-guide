@@ -1,0 +1,9 @@
+# Line endings: text files are stored with LF and checked out as your git setting says.
+* text=auto
+# Windows scripts need CRLF (cmd, PowerShell 5.1), also in a GitHub ZIP download
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.vbs text eol=crlf
+# third-party minified files stay byte for byte as they were downloaded
+*.min.js -text

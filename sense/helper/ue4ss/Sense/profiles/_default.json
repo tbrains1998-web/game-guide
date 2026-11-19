@@ -1,0 +1,21 @@
+{
+  "game": "_default",
+  "_about": "Word lists and settings every Unreal game starts from. A game file (profiles/<game>.json) is merged on top: lists are joined, plain values replace these. Words match in any case at the start of a name part (MapLockObject = Map|Lock|Object). not_items = exact class names, not_item_words = exact-case pieces anywhere in the class name.",
+  "discovery": { "mode": "auto", "min_interval_s": 120, "move_m": 200, "budget_s": 0.05, "max_interval_s": 600 },
+  "item_words": ["pickup", "item", "loot", "collect", "treasure", "gift", "reward", "chest", "bonus", "gather"],
+  "collectible_words": ["treasure", "chest", "collect", "bonus"],
+  "door_words": ["door", "gate", "lock", "barrier", "blocker", "shutter", "portcullis"],
+  "exclude_words": ["Spawn", "Manager", "Subsystem", "Widget", "UI", "HUD", "Volume", "Trigger", "Cache",
+                    "Default__", "Character", "Pawn", "Controller", "Camera", "Light", "Sound", "Audio", "Decal",
+                    "Effect", "FX", "VFX", "Niagara", "Particle", "Emitter", "Spline", "Projectile", "Shop",
+                    "Vendor", "Merchant", "Breakable", "Destructible", "Geometry", "Preview", "Debug", "Marker",
+                    "Icon", "Sequence", "Material"],
+  "not_items": [],
+  "not_item_words": [],
+  "guess_gone": [ { "type": "hidden" } ],
+  "seeds": [],
+  "doors": [],
+  "target": null,
+  "player_hint": null,
+  "fov_axis": "v"
+}

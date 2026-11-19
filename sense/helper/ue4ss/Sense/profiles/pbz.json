@@ -1,0 +1,41 @@
+{
+  "game": "pbz",
+  "_about": "Phantom Blade Zero. Seeds = the old main.lua ITEM_CLASSES with the same opened/taken rules. Discovery (the FindAllOf Actor sweep, ~0.08-0.12 s hitch) is off like the old SCAN_ACTORS = false; set mode to auto to let it guess new classes.",
+  "discovery": { "mode": "off" },
+  "not_items": ["BP_FlowInteractActor_Character_C", "BP_FlowInteractActor_Female_ScareCrow1_C",
+                "BP_FlowInteract_HuanShuPingZhang_C", "TriggerBox", "PBZSaveTriggerBox", "HDRIBackdrop_C",
+                "GeometryCollectionActor", "BP_ChestSwipeMaterialCache_C", "BP_InteractiveWaterTriger_C"],
+  "not_item_words": ["ChaoSpawner", "ChaosSpawner"],
+  "exclude_words": ["ChaoSpawner", "ChaosSpawner", "FogDoor", "MapTargetPoint"],
+  "seeds": [
+    { "name": "BP_Chest_C", "kind": "collectible",
+      "gone": [ { "type": "hidden" },
+                { "type": "bool", "prop": "CurSwitchState", "is": true },
+                { "type": "arrayAnyTrue", "prop": "bInteracted", "max": 64 } ] },
+    { "name": "BP_FlowInteract_MemoryFlower_C", "kind": "collectible",
+      "gone": [ { "type": "hidden" } ] },
+    { "name": "BP_HangingGift_C", "kind": "pickup",
+      "gone": [ { "type": "hidden" },
+                { "type": "call", "fn": "IsValidPickup", "is": false } ] },
+    { "name": "BP_FlowInteractActor_C", "kind": "pickup",
+      "require": [ { "type": "nameSet", "prop": "LootItemID" } ],
+      "gone": [ { "type": "hidden" },
+                { "type": "call", "fn": "IsValidPickup", "is": false } ] },
+    { "name": "BP_Rubbish_C", "kind": "pickup",
+      "gone": [ { "type": "hidden" },
+                { "type": "bool", "prop": "bDestroyed", "is": true },
+                { "type": "call", "fn": "IsValidPickup", "is": false } ] }
+  ],
+  "doors": [
+    { "name": "MapLockObject", "kind": "lock", "unlocked": { "type": "bool", "prop": "bUnlocked", "is": true },
+      "pos_prop": "ActorLocation", "id_prop": "GuidString" },
+    { "name": "SwitchLockObject", "kind": "lock", "unlocked": { "type": "bool", "prop": "bUnlocked", "is": true },
+      "pos_prop": "ActorLocation", "id_prop": "GuidString" },
+    { "name": "ShaChiWeaponLockObject", "kind": "lock", "unlocked": { "type": "bool", "prop": "bUnlocked", "is": true },
+      "pos_prop": "ActorLocation", "id_prop": "GuidString" },
+    { "name": "DoorDirLockObject", "kind": "lock", "unlocked": { "type": "bool", "prop": "bUnlocked", "is": true },
+      "pos_prop": "ActorLocation", "id_prop": "GuidString" }
+  ],
+  "target": { "type": "pbz_narrative" },
+  "player_hint": null
+}

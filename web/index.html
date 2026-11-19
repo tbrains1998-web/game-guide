@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Guide</title>
+<link rel="icon" href="/static/icon.png">
+<script src="/static/marked.min.js"></script>
+<script src="/static/purify.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --panel2: #1e222b; --line: #2a2f3a;
+    --text: #e6e8ec; --dim: #8b93a3; --accent: #7aa2ff; --accent2: #3d5bd9;
+    --me: #243049; --bot: #1b1f27; --rec: #e5484d; --ok: #46a758;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.5 "Segoe UI", system-ui, sans-serif;
+         display: flex; flex-direction: column; }
+  button, input, textarea, select { font: inherit; color: inherit; }
+  button { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px;
+           cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.on { background: var(--accent2); border-color: var(--accent); }
+
+  header { padding: 10px 12px 8px; background: var(--panel); border-bottom: 1px solid var(--line);
+           display: flex; flex-direction: column; gap: 8px; }
+  .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  #gameInput { flex: 1; min-width: 160px; background: var(--bg); border: 1px solid var(--line);
+               border-radius: 8px; padding: 6px 10px; font-weight: 600; }
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; padding: 5px 10px; }
+  .spacer { flex: 1; }
+  .small { font-size: 12px; color: var(--dim); }
+
+  #picker { display: none; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 4px; max-height: 260px; overflow-y: auto; }
+  #picker.open { display: block; }
+  .win { display: flex; flex-direction: column; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
+  .win:hover { background: var(--panel2); }
+  .win b { font-weight: 600; }
+  .win .sub { font-size: 11px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .badge { font-size: 10px; padding: 0 5px; border-radius: 4px; margin-left: 6px; background: #1b3a5c; color: #9cc3ff; }
+  .badge.known { background: #1d3b24; color: #8fd19e; }
+  #candidate { display: none; background: #2a2413; border: 1px solid #5c4d1e; border-radius: 8px; padding: 8px 10px; }
+  #candidate input { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; min-width: 180px; flex: 1; }
+
+  #log { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 92%; padding: 8px 12px; border-radius: 12px; word-wrap: break-word; }
+  .msg.user { align-self: flex-end; background: var(--me); border-bottom-right-radius: 4px; }
+  .msg.assistant { align-self: flex-start; background: var(--bot); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+  .msg p { margin: 4px 0; } .msg ol, .msg ul { margin: 4px 0; padding-left: 22px; }
+  .msg code { background: #0008; padding: 1px 5px; border-radius: 4px; }
+  .msg a { color: var(--accent); }
+  .msg img.shot { max-width: 100%; border-radius: 8px; margin-top: 6px; display: block; }
+  .meta { font-size: 11px; color: var(--dim); margin-top: 4px; }
+  .sources { margin-top: 6px; font-size: 12px; color: var(--dim); }
+  .sources a { color: var(--dim); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sources a:hover { color: var(--accent); }
+  .empty { margin: auto; text-align: center; color: var(--dim); max-width: 360px; }
+  .empty b { color: var(--text); }
+  kbd { background: var(--panel2); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; font-size: 12px; }
+
+  #status { padding: 0 14px; min-height: 20px; font-size: 12px; color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #status.busy::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+                         background: var(--accent); margin-right: 6px; animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity: .2; } }
+
+  footer { background: var(--panel); border-top: 1px solid var(--line); padding: 8px 12px 10px; display: flex; flex-direction: column; gap: 6px; }
+  #shotBox { display: none; align-items: center; gap: 8px; }
+  #shotThumbs { display: flex; gap: 8px; }
+  .thumb { position: relative; }
+  .thumb img { height: 54px; border-radius: 6px; border: 1px solid var(--line); display: block; }
+  .thumb button { position: absolute; top: -7px; right: -7px; padding: 0 5px; font-size: 11px; line-height: 16px; }
+  .inputrow { display: flex; gap: 6px; align-items: flex-end; }
+  #text { flex: 1; resize: none; background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
+          padding: 8px 10px; min-height: 40px; max-height: 140px; }
+  #text:focus, #gameInput:focus { outline: none; border-color: var(--accent); }
+  #mic { width: 44px; height: 40px; font-size: 18px; padding: 0; }
+  #mic.rec { background: var(--rec); border-color: var(--rec); animation: pulse 1s infinite; }
+  #send { height: 40px; background: var(--accent2); border-color: var(--accent); }
+  #cam { height: 40px; }
+  details { font-size: 12px; color: var(--dim); }
+  .overlay { display: none; position: fixed; inset: 0; background: #000a; z-index: 8; padding: 16px; overflow-y: auto; }
+  .overlay.open { display: flex; align-items: flex-start; justify-content: center; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; max-width: 520px; width: 100%; }
+  .card table { border-collapse: collapse; width: 100%; }
+  .card td { padding: 6px 8px 6px 0; vertical-align: top; border-top: 1px solid var(--line); }
+  .card td:first-child { white-space: nowrap; width: 1%; }
+  .msg img.marked { max-width: 100%; border-radius: 8px; border: 1px solid var(--line); margin: 2px 0 8px; display: block; }
+  .msg.assistant { max-width: 100%; }
+  .msg .step { font-size: 16px; line-height: 1.5; padding: 2px 0 6px; }
+  .msg .step p { margin: 0; }
+  .stepnav { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
+  .stepnav button { padding: 4px 10px; }
+  .stepnav button.primary { background: var(--accent2); border-color: var(--accent); }
+  .stepnav button:disabled { opacity: .4; cursor: default; }
+  .stepnav kbd { font-size: 10px; margin-left: 4px; }
+  .allToggle { color: var(--dim) !important; font-size: 11px; }
+  select { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; max-width: 100%; }
+  .msg.read { align-self: flex-start; background: #221d14; border: 1px solid #4d4128; border-bottom-left-radius: 4px;
+              font-family: Georgia, "Times New Roman", serif; white-space: pre-wrap; }
+  .msg.read .meta { font-family: "Segoe UI", system-ui, sans-serif; display: flex; gap: 8px; align-items: center; }
+  .msg.read button { padding: 1px 8px; font-size: 11px; }
+  details textarea { width: 100%; min-height: 90px; margin-top: 4px; background: var(--bg); border: 1px solid var(--line);
+                     border-radius: 6px; padding: 6px; color: var(--text); }
+  #senseRange { width: 110px; vertical-align: middle; accent-color: var(--accent); }
+  #senseRangeVal { display: inline-block; min-width: 34px; color: var(--text); }
+  #senseStatus { color: var(--text); }
+  #senseStatus.off { color: var(--dim); }
+  #senseInstall, #senseUninstall, #senseDiscovery, #senseDiscoveryText { display: none; }
+  #senseDiscoveryText { max-height: 220px; overflow: auto; margin: 6px 0 0; padding: 6px; background: var(--bg);
+                        border: 1px solid var(--line); border-radius: 6px; white-space: pre-wrap; font-size: 11px; }
+  #toast { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); background: #3a1d1f; border: 1px solid #7a2e33;
+           padding: 8px 14px; border-radius: 8px; display: none; z-index: 9; max-width: 90%; }
+  #brainWarn { background: #5a1a1f; border: 1px solid #a33a41; color: #ffd9db; padding: 8px 12px; margin-bottom: 8px;
+               border-radius: 6px; font-weight: 600; }
+  #brainWarn[hidden] { display: none; }
+  .bs { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin-top: 8px;
+        display: flex; flex-direction: column; gap: 5px; }
+  .bs.first { border-color: var(--accent); }
+  .bs a { color: var(--accent); }
+  .bsFirst { display: none; font-size: 11px; color: var(--accent); }
+  .bs.first .bsFirst { display: inline; }
+  .bsStatus { font-size: 12px; color: var(--dim); }
+  .bsStatus::before { content: "●"; margin-right: 6px; }
+  .bsStatus.ok { color: #8fd19e; }
+  .bsStatus.bad { color: #ff9ea3; }
+  #bsGeminiKey { flex: 1; min-width: 160px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; }
+  #bsLocalPull { margin: 0; padding: 6px 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+                 font-size: 12px; white-space: pre-wrap; user-select: all; }
+  #bsLocalPull:empty { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <div id="brainWarn" hidden></div>
+  <div class="row">
+    <input id="gameInput" list="gameList" placeholder="Which game are you playing?" autocomplete="off">
+    <datalist id="gameList"></datalist>
+    <button id="setGame" title="Switch to this game (you can also type a Steam App ID)">Set</button>
+    <button id="pick" title="Pick the game from your open windows">🎮 Pick window</button>
+    <button id="keysBtn" title="Show all keyboard shortcuts and buttons">⌨ Shortcuts</button>
+    <button id="brainBtn" title="Choose which AI answers your questions">🧠 Brain</button>
+  </div>
+  <div id="picker">
+    <div class="small" style="padding:4px 6px 6px">Click your game (start it first). It's remembered, so next time it's detected automatically.</div>
+    <div id="winList"></div>
+  </div>
+  <div class="row">
+    <div class="seg" id="levels" title="How much to give away">
+      <button data-l="nudge">Nudge</button><button data-l="hint">Hint</button><button data-l="solution">Solution</button>
+    </div>
+    <button id="speak" title="Read answers aloud">🔊 Read aloud</button>
+    <button id="auto" title="Switch game automatically based on which game window is in front">Auto-detect</button>
+    <button id="overlayBtn" title="Show the current step and its circle over the game itself (F6 hides/shows it in game)">Overlay</button>
+    <span class="spacer"></span>
+    <button id="startup" title="Start Game Guide quietly in the background when Windows starts">Start with Windows</button>
+    <button id="clear" title="Start a fresh conversation (progress notes are kept)">New chat</button>
+  </div>
+  <div id="candidate" class="row">
+    <span>🎮 Detected <b id="candExe"></b> — what game is it?</span>
+    <input id="candName">
+    <button id="candSave">Save</button><button id="candNo">✕</button>
+  </div>
+</header>
+
+<div id="log"></div>
+<div id="status"></div>
+
+<footer>
+  <div id="shotBox"><div id="shotThumbs"></div><span class="small" id="shotNote"></span>
+    <button id="shotDrop">Remove all</button></div>
+  <div class="inputrow">
+    <textarea id="text" rows="1" placeholder="Where are you and what are you stuck on?"></textarea>
+    <button id="mic" title="Click to talk, click again to send">🎤</button>
+    <button id="cam" title="Screenshot the game monitor (or press F11 in game)">📷</button>
+    <button id="send">Send</button>
+  </div>
+  <div class="row small">
+    <span>In game: hold <kbd id="kTalk">F10</kbd> to ask · <kbd id="kShot">F11</kbd> screenshot · <kbd id="kNext">F7</kbd> next step · <kbd id="kOv">F6</kbd> overlay · <kbd id="kWhere">F4</kbd> where am I · <kbd id="kRead">F8</kbd> read text on screen aloud</span>
+    <span class="spacer"></span>
+    <button id="readBtn" title="Read the text on the game screen out loud (F8 in game; press again to stop)">📖 Read screen</button>
+    <button id="whereBtn" title="Where am I? Chapter, area, objective and what's next (F4 in game also takes a screenshot)">📍 Where am I?</button>
+    <button id="whatsleftBtn" title="What is still left to do in the area you are in (uses your latest map)">🗺 What's left here?</button>
+    <button id="bossBtn" title="A compact card for the boss you're facing: phases, what to dodge, what to use, the plan">⚔ Boss tips</button>
+    <button id="retry" title="The last answer failed in game: re-check it with the careful model and your screenshot">❌ Didn't work</button>
+    <button id="solve" title="Re-ask your last question with the full solution">Just tell me</button>
+  </div>
+  <details id="voiceBox"><summary>Voice &amp; reading</summary>
+    <div class="row" style="margin-top:6px">
+      <label>Voice <select id="voiceSel"></select></label>
+      <button id="voiceTest">▶ Test</button>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <label>Reading text on screen:
+        <select id="readMode">
+          <option value="auto">Auto (instant, Claude if it's hard to read)</option>
+          <option value="fast">Fast (instant, Windows text recognition)</option>
+          <option value="smart">Smart (Claude reads it, ~8 s, best for handwriting)</option>
+        </select></label>
+    </div>
+  </details>
+  <details id="senseBox"><summary>Sense (a pulse and an arrow on screen when an item is near, sound optional)<span id="senseState"></span></summary>
+    <div class="row" style="margin-top:6px">
+      <button id="senseOn" title="Always on in game: the item's spot pulses (or an arrow at the edge points to it) when a pickup or collectible is within range. The sound is optional, see Sound: on/off">Sense: on</button>
+      <label title="How close an item must be before it is marked on screen (and heard, if Sound is on)">Range <input type="range" id="senseRange" min="3" max="30" step="1" value="10"> <span id="senseRangeVal">10 m</span></label>
+      <label>Sound <select id="senseSound">
+        <option value="chime">Soft chime</option>
+        <option value="knock">Wooden knock</option>
+        <option value="harp">Harp pluck</option>
+      </select></label>
+      <button id="senseSoundOn" title="Turn the sound near items on or off. The pulse and arrows on screen always stay.">Sound: off</button>
+      <button id="senseTest" title="Play the chosen sound once">▶ Test</button>
+      <button id="senseMute" title="No sound for 5 minutes (the pulse on screen stays)">Mute 5 min</button>
+      <button id="sensePath" title="A dotted glowing trail on the ground from your feet toward where the game wants you to go (the tracked quest, or a door you just unlocked). Off screen: an arrow at the edge with the metres left. Works even when Sense is off.">Quest path: on</button>
+      <button id="senseRoute" title="On: the trail follows the game's own walking paths (stairs, slopes, around walls). Off: the game is not asked for a route, the trail goes straight toward the target. Turn it off if the game gets unstable. Works right away, no game restart.">Quest path follows the ground: on</button>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <span id="senseStatus"></span>
+      <button id="senseInstall" title="Puts the small helper into the game folder. The game must be closed. A backup is made first.">Install helper</button>
+      <a href="#" id="senseUninstall" class="small" title="Turns the helper off in the game folder (the game then starts without it)">Uninstall helper</a>
+      <a href="#" id="senseDiscovery" class="small" title="The list the helper wrote when you pressed F3 in game (first run only)">Show discovery list</a>
+    </div>
+    <pre id="senseDiscoveryText"></pre>
+  </details>
+  <details id="notesBox"><summary>Progress notes (what the guide remembers about your playthrough)</summary>
+    <textarea id="notes" placeholder="e.g. - Chapter 3, hospital 2F&#10;- Have the Lion Medallion"></textarea>
+    <button id="notesSave">Save notes</button>
+  </details>
+  <details id="dossierBox"><summary>Game dossier (researched once per game: chapters, bosses, missables - contains spoilers)<span id="dossierState"></span></summary>
+    <div id="dossier" class="msg assistant" style="margin-top:6px; max-width:100%"></div>
+    <a href="#" id="dossierRebuild" class="small">Rebuild</a>
+  </details>
+</footer>
+<div id="toast"></div>
+<div id="brainSetup" class="overlay">
+  <div class="card">
+    <div class="row"><b style="font-size:16px">🧠 Choose your brain</b><span class="spacer"></span><button id="bsClose" title="Close">✕</button></div>
+    <div class="small" style="margin-top:4px">Game Guide needs an AI "brain" to answer your questions. Pick the one you want to use first.
+      The other two stay as backups, in case the first one does not answer. You can open this again any time with the 🧠 Brain button at the top.</div>
+    <div class="bs" data-b="claude">
+      <div class="row"><b>Claude</b><span class="small">best answers</span><span class="spacer"></span><span class="bsFirst">used first</span></div>
+      <div class="small">Needs Claude Code on this PC and a paid Claude plan. It uses your plan, there is no extra cost.
+        <a href="https://claude.com/claude-code" target="_blank" rel="noopener">Get Claude Code</a></div>
+      <div class="bsStatus" id="bsClaudeStatus"></div>
+      <div class="row"><button id="bsClaudeLogin" title="Opens a window where you sign in to your Claude account">Sign in to Claude</button>
+        <button data-check="claude">Check again</button><span class="spacer"></span><button data-use="claude">Use this</button></div>
+    </div>
+    <div class="bs" data-b="gemini">
+      <div class="row"><b>Gemini</b><span class="small">good answers, free</span><span class="spacer"></span><span class="bsFirst">used first</span></div>
+      <div class="small">Needs a free key from Google. The key is saved only on this PC (in config.json).
+        <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Get a free key</a></div>
+      <div class="bsStatus" id="bsGeminiStatus"></div>
+      <div class="row"><input id="bsGeminiKey" type="password" placeholder="Paste your key here" autocomplete="off">
+        <button id="bsGeminiTest" title="Saves the key on this PC and checks it with Google">Save and test</button>
+        <button data-use="gemini">Use this</button></div>
+    </div>
+    <div class="bs" data-b="local">
+      <div class="row"><b>Local</b><span class="small">free, runs on your PC, no account</span><span class="spacer"></span><span class="bsFirst">used first</span></div>
+      <div class="small">Needs Ollama and a few GB of free disk space. Answers are weaker than Claude or Gemini.
+        <a href="https://ollama.com/download" target="_blank" rel="noopener">Get Ollama</a>, start it, then run these in a terminal:</div>
+      <pre id="bsLocalPull"></pre>
+      <div class="bsStatus" id="bsLocalStatus"></div>
+      <div class="row"><button data-check="local">Check again</button><span class="spacer"></span><button data-use="local">Use this</button></div>
+    </div>
+    <div class="row" style="margin-top:10px"><span class="small" id="bsOrder"></span><span class="spacer"></span>
+      <button id="bsSkip">Skip for now</button></div>
+  </div>
+</div>
+<div id="keys" class="overlay">
+  <div class="card">
+    <div class="row"><b style="font-size:16px">⌨ Shortcuts</b><span class="spacer"></span><button id="keysClose">✕</button></div>
+    <div class="small" style="margin:2px 0 10px">These work while you're in the game.
+      (Also listed when you right-click the gamepad icon by the clock.)</div>
+    <table>
+      <tr><td><kbd id="kk1">F10</kbd> <span class="small">hold</span></td><td><b>Ask by voice</b><br><span class="small">Say where you are and what you're stuck on, then let go. Beep = listening, lower beep = sent.</span></td></tr>
+      <tr><td><kbd id="kk4">F7</kbd></td><td><b>Next step</b><br><span class="small">Answers come one short step at a time. Shows the next step of the latest answer, and reads it out when Read aloud is on.</span></td></tr>
+      <tr><td><kbd id="kk5">F6</kbd></td><td><b>Hide / show the overlay</b><br><span class="small">The current step (and its circle) is shown over the game itself. F6 hides it until the next answer, or shows it again.</span></td></tr>
+      <tr><td><kbd id="kk6">F4</kbd></td><td><b>Where am I?</b><br><span class="small">Takes a screenshot and answers in 3 lines: where you are, your objective right now, and what to do next. No spoilers or codes.</span></td></tr>
+      <tr><td><kbd id="kk3">F8</kbd></td><td><b>Read the screen aloud</b><br><span class="small">Reads notes, letters, documents and subtitles on screen with the voice. Press again to stop.</span></td></tr>
+      <tr><td><kbd id="kk2">F11</kbd></td><td><b>Attach a screenshot</b><br><span class="small">Sent along with your next question so the guide can see where you are. Press it again to attach more (up to 4), e.g. the clue first, then the puzzle.</span></td></tr>
+      <tr id="helpF3"><td><kbd>F3</kbd> <span class="small">first run only (Unreal games)</span></td><td><b>Sense discovery list</b><br><span class="small">Press once in game, the first time you play with the Sense helper. It writes a list of the game's item types so Sense can learn which ones count. Not needed after that.</span></td></tr>
+      <tr><td><kbd>Esc</kbd> <span class="small">in this window</span></td><td><b>Stop</b><br><span class="small">Stops an answer that's being written or read out.</span></td></tr>
+    </table>
+    <div class="small" style="margin:12px 0 6px"><b>Buttons</b></div>
+    <table class="small">
+      <tr><td>Nudge / Hint / Solution</td><td>How much to give away. Hint = where to look, never the code. Solution = exact answer.</td></tr>
+      <tr><td>Just tell me</td><td>Re-asks your last question with the full solution.</td></tr>
+      <tr><td>❌ Didn't work</td><td>The answer failed in game: the guide first re-gives the same steps more precisely (you may have pressed something wrong) and asks for a screenshot to check, before trying a different answer. Asking the same question twice does the same.</td></tr>
+      <tr><td>Puzzle from your screen</td><td>F11 on the clue or target (note, camera feed, pattern), F11 on the puzzle itself, then ask "solve this". The guide reads your target and current state, says what it read so you can check, then gives one move per step, circled.</td></tr>
+      <tr><td>📷 + question</td><td>With a screenshot attached, the answer circles the buttons/items on it, one circle per step. Orange circle = the guide isn't sure which one.</td></tr>
+      <tr><td>🔊 Read aloud</td><td>Speaks the first step of every answer out loud (F7 reads the next one).</td></tr>
+      <tr><td>🎮 Pick window</td><td>Choose your game from the open windows.</td></tr>
+      <tr><td>Auto-detect</td><td>Switches game automatically when you play something else.</td></tr>
+      <tr><td>📍 Where am I?</td><td>Same as F4, from the window (press F11 first if you want it to look at the screen).</td></tr>
+      <tr><td>Map: F4 with the map open</td><td>Press F4 while the game map is on screen. The guide says where you are, where to go next, and draws the route on the map. Away from a checkpoint it uses your last map and tells you the nearest checkpoint to open it.</td></tr>
+      <tr><td>🗺 What's left here?</td><td>A short list of what is still to do in the area you are in: done, probably not done, or unknown, with the undone ones circled on your latest map. Hint = rough place, Solution = exact spot.</td></tr>
+      <tr><td>Clues from F8</td><td>When F8 reads a note, sign or dialogue, tasks it mentions (a place to go, a code, a name) are saved as "Clue" lines in Progress notes, and "Where do I go?" keeps them in mind.</td></tr>
+      <tr><td>⚔ Boss tips</td><td>A compact card for the boss you're facing: phases, attacks to dodge and their tells, what to use, the common mistake, the plan. Any question with "boss" or "how do I beat" in it gets this format too.</td></tr>
+      <tr><td>Overlay</td><td>Shows the current step over the game, with the circle drawn on the real button. Circles hide if you look away from where the screenshot was taken.</td></tr>
+      <tr><td>Sense</td><td>Always on, no key needed. When a pickup or collectible is within range (10 m by default), its spot pulses on screen; off screen, a big arrow at the edge, with the distance, points to it. The sound is off by default: use the "Sound: on/off" button to turn it on (then a soft sound repeats, faster when closer). Needs the small helper in the game folder (Install helper, with the game closed). It only reads the game, it never changes it.</td></tr>
+      <tr><td>Quest path</td><td>On by default, no key needed. When the game has a target (the quest you track, or a door or lock you just opened and have not reached yet), a dotted glowing trail on the ground shows the way from your feet toward it, the next 30 m, with a small arrow at the end. The trail follows the paths you can really walk: along paths, up and down stairs and slopes, and around walls. Where the game has no walking paths for that spot, the dots sit on the ground in a straight line toward the target. Dots that would be drawn on top of your character are left out, near or far, so the trail looks like it goes behind you; the rest of the trail stays. When the target is behind you or off screen, an arrow at the edge shows the way and the metres left. "↑ 2 floors" means it is higher up; it only shows when the target is within 100 m (further away you just see the metres). It hides when you are within 5 m. Only main quests get a trail (side quests do not). When your main quest is in another area of the world, no trail is drawn: the Sense panel says "Main quest is in another area" with the area's name, and a short message pops up once. Turn it on or off with the "Quest path" button in the Sense panel. "Quest path follows the ground: off" makes the trail go straight again and stops asking the game for walking paths (use it if the game gets unstable; works at once, no game restart). Needs the Sense helper.</td></tr>
+      <tr><td>New chat</td><td>Fresh conversation for this game (progress notes are kept).</td></tr>
+    </table>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const log = $("#log"), statusEl = $("#status");
+let S = {}, live = null, liveText = "";
+
+const post = (url, body) => fetch(url, {method: "POST", headers: {"Content-Type": "application/json"},
+                                        body: JSON.stringify(body || {})});
+const md = t => DOMPurify.sanitize(marked.parse(t || ""), {ADD_ATTR: ["target"]});
+function linkify(el) { el.querySelectorAll("a").forEach(a => { a.target = "_blank"; a.rel = "noopener"; }); }
+function atBottom() { return log.scrollHeight - log.scrollTop - log.clientHeight < 80; }
+function scroll(force) { if (force || atBottom()) log.scrollTop = log.scrollHeight; }
+function toast(t) { const el = $("#toast"); el.textContent = t; el.style.display = "block";
+                    clearTimeout(toast.t); toast.t = setTimeout(() => el.style.display = "none", 4000); }
+function setStatus(t, busy) { statusEl.textContent = t || ""; statusEl.className = busy ? "busy" : ""; }
+
+function emptyState() {
+  if (log.children.length) return;
+  log.innerHTML = `<div class="empty">${S.game ? `<b>${esc(S.game)}</b><br><br>` : "<b>Type the game you're playing above.</b><br><br>"}
+    Say or type where you are and what you're stuck on — e.g.<br><i>"I'm in the hotel, there's a door with a date dial and I don't know the date"</i>
+    <br><br>Hold <kbd>${(S.hotkeys||["F10"])[0].toUpperCase()}</kbd> in game to talk.</div>`;
+}
+function esc(s) { return (s || "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+function addUser(m) {
+  log.querySelector(".empty")?.remove();
+  const d = document.createElement("div"); d.className = "msg user";
+  const shots = m.shots || (m.shot ? [m.shot] : []);
+  d.innerHTML = esc(m.content).replace(/\n/g, "<br>") + shots.map(u => `<img class="shot" src="${u}">`).join("")
+    + `<div class="meta">${m.via === "voice" ? "🎤 " : ""}${m.level || ""}</div>`;
+  log.appendChild(d); scroll(true);
+}
+function addRead(m) {
+  log.querySelector(".empty")?.remove();
+  const d = document.createElement("div"); d.className = "msg read";
+  d.textContent = m.content;
+  const meta = document.createElement("div"); meta.className = "meta";
+  meta.innerHTML = `📖 read from screen${m.via === "smart" ? " by Claude" : ""} <button>🔊 Replay</button>`;
+  meta.querySelector("button").onclick = () => post("/api/say", {text: m.content});
+  d.appendChild(meta); log.appendChild(d); scroll(true);
+}
+function addMsg(m) { m.role === "user" ? addUser(m) : m.role === "read" ? addRead(m) : addBot(m); }
+function addBot(m) {
+  log.querySelector(".empty")?.remove();
+  const d = document.createElement("div"); d.className = "msg assistant";
+  fillBot(d, m); log.appendChild(d); scroll(true); return d;
+}
+function clean(t) {   // no source citations / lists in the chat
+  return (t || "").replace(/\n+\**Sources?\**:?\**\s*\n[\s\S]*$/i, "").replace(/\s?\[\d+\](\[\d+\])*/g, "");
+}
+// Answers are shown ONE step at a time (each list item / paragraph is a step); Next/Back/Show all, F7 = next.
+function splitSteps(html) {
+  const box = document.createElement("div"); box.innerHTML = html;
+  const steps = []; let num = 0;
+  for (const el of box.children) {
+    if (el.tagName === "OL" || el.tagName === "UL") {
+      for (const li of el.children) steps.push({html: li.innerHTML, text: li.textContent.trim(), num: ++num});
+    } else if (el.textContent.trim()) steps.push({html: el.outerHTML, text: el.textContent.trim(), num: null});
+  }
+  return steps;
+}
+// The marked-up screenshot for a step (that step's target circled), or the all-steps version.
+function markImg(m, step) {
+  if (!m.marks) return "";
+  const one = step && m.marks.steps[String(step.num)];
+  const srcs = one ? [one] : (Array.isArray(m.marks.all) ? m.marks.all : [m.marks.all]);
+  return srcs.map(src => `<a href="${src}" target="_blank" title="Open full size"><img class="shot marked" src="${src}"></a>`).join("");
+}
+function fillBot(d, m, streaming) {
+  const html = md(clean(m.content));
+  const steps = (m.steps && m.steps.length && !streaming)
+    ? m.steps.map(s => ({html: DOMPurify.sanitize(marked.parseInline(s.text)), text: s.text, num: s.num}))
+    : splitSteps(html);
+  d._steps = steps; d._meta = m;
+  if (d._pos === undefined) d._pos = 0;
+  let body;
+  if (steps.length <= 1 || d._all) {
+    body = markImg(m, steps.length === 1 ? steps[0] : null) + html;
+  } else {
+    const i = Math.min(d._pos, steps.length - 1);
+    body = markImg(m, steps[i]) + `<div class="step">${steps[i].html}</div>`;
+    if (!streaming) body += `<div class="stepnav"><span class="small">Step ${i + 1} of ${steps.length}</span>
+      <span class="spacer"></span>
+      <button data-a="back" ${i === 0 ? "disabled" : ""}>◀ Back</button>
+      <button data-a="next" class="${i < steps.length - 1 ? "primary" : ""}" ${i >= steps.length - 1 ? "disabled" : ""}>Next ▶ <kbd>${(S.next_key || "f7").toUpperCase()}</kbd></button></div>`;
+  }
+  if (!streaming && steps.length > 1)
+    body += `<div class="small"><a href="#" class="allToggle">${d._all ? "One step at a time" : "Show all " + steps.length + " steps"}</a></div>`;
+  if (m.brain || m.secs) body += `<div class="meta">${m.brain || ""}${m.secs ? " · " + m.secs + "s" : ""}</div>`;
+  d.innerHTML = body; linkify(d);
+  // Clicking in the window only speaks when "Read aloud" is on; F7 (in game) always speaks.
+  d.querySelectorAll(".stepnav button").forEach(b => b.onclick = () => stepClick(d, b.dataset.a === "next" ? 1 : -1));
+  const t = d.querySelector(".allToggle");
+  if (t) { t.removeAttribute("target"); t.onclick = e => { e.preventDefault(); d._all = !d._all; fillBot(d, d._meta); }; }
+}
+function goStep(d, delta, speak) {
+  if (!d || !d._steps) return;
+  const n = d._steps.length;
+  if (n <= 1) { if (speak && n) sayStep(d._steps[0].text); return; }
+  const target = (d._all ? n : d._pos) + delta;
+  if (delta > 0 && target >= n) { if (speak) sayStep("That was the last step."); return; }
+  d._all = false;
+  d._pos = Math.max(0, Math.min(n - 1, target));
+  fillBot(d, d._meta);
+  if (speak) sayStep(d._steps[d._pos].text);
+}
+function sayStep(text) { post("/api/say", {text, step: true}); }
+// Latest answer: the server moves the step so the window, the in-game overlay and the voice stay in sync.
+function stepClick(d, delta) {
+  if (d === lastAnswer()) post("/api/step", {delta});
+  else goStep(d, delta, !!S.speak);
+}
+function lastAnswer() { const a = log.querySelectorAll(".msg.assistant"); return a[a.length - 1]; }
+
+function applyState(s) {
+  S = s;
+  const bw = $("#brainWarn");
+  if (bw) {
+    bw.textContent = s.brain_warning ? "Claude isn't available: " + s.brain_warning + ". Answers now come from the next brain in your list. Press 🧠 Brain to set one up." : "";
+    bw.hidden = !s.brain_warning;
+  }
+  if (!s.brain_setup_done && !window.brainShown) openBrains(true);   // first run: pick a brain
+  if (document.activeElement !== $("#gameInput")) $("#gameInput").value = s.game || "";
+  $("#gameList").innerHTML = (s.games || []).map(g => `<option value="${esc(g)}">`).join("");
+  document.querySelectorAll("#levels button").forEach(b => b.classList.toggle("on", b.dataset.l === s.level));
+  $("#speak").classList.toggle("on", !!s.speak);
+  if (s.voices && !$("#voiceSel").options.length)
+    $("#voiceSel").innerHTML = s.voices.map(([id, label]) => `<option value="${esc(id)}">${esc(label)}</option>`).join("");
+  if (document.activeElement !== $("#voiceSel")) $("#voiceSel").value = s.voice;
+  if (document.activeElement !== $("#readMode")) $("#readMode").value = s.read_mode;
+  if (s.read_key) $("#kRead").textContent = s.read_key.toUpperCase();
+  if (s.next_key) $("#kNext").textContent = s.next_key.toUpperCase();
+  $("#startup").classList.toggle("on", !!s.startup);
+  $("#startup").textContent = s.startup ? "✓ Starts with Windows" : "Start with Windows";
+  $("#auto").classList.toggle("on", !!s.auto_detect);
+  $("#overlayBtn").classList.toggle("on", !!s.overlay);
+  $("#overlayBtn").textContent = s.overlay ? "Overlay: on" : "Overlay: off";
+  if (s.overlay_key) { $("#kOv").textContent = s.overlay_key.toUpperCase(); $("#kk5").textContent = s.overlay_key.toUpperCase(); }
+  if (s.where_key) { $("#kWhere").textContent = s.where_key.toUpperCase(); $("#kk6").textContent = s.where_key.toUpperCase(); }
+  $("#dossierState").textContent = s.dossier_building ? " - researching..." : (s.has_dossier ? "" : " - none yet");
+  applySense(s);
+  $("#auto").textContent = s.auto_detect ? "Auto-detect: on" : "Auto-detect: off";
+  $("#mic").classList.toggle("rec", !!s.recording);
+  $("#send").disabled = !!s.busy;
+  const shots = s.shots || [];
+  $("#shotBox").style.display = shots.length ? "flex" : "none";
+  $("#shotThumbs").innerHTML = shots.map((u, i) => `<span class="thumb"><img src="${u}"><button title="Remove this one" data-i="${i}">✕</button></span>`).join("");
+  $("#shotThumbs").querySelectorAll("button").forEach(b => b.onclick = () => post("/api/set", {drop_shot: +b.dataset.i}));
+  $("#shotNote").textContent = shots.length === 1 ? "Screenshot will be sent with your next question (press F11 again to add the puzzle too)"
+                                                   : `${shots.length} screenshots will be sent with your next question`;
+  if (document.activeElement !== $("#notes")) $("#notes").value = s.notes || "";
+  $("#kTalk").textContent = (s.hotkeys||["f10"])[0].toUpperCase();
+  $("#kShot").textContent = (s.hotkeys||[,"f11"])[1].toUpperCase();
+  const c = $("#candidate");
+  if (s.candidate) {
+    c.style.display = "flex"; $("#candExe").textContent = s.candidate.exe;
+    if (document.activeElement !== $("#candName")) $("#candName").value = s.candidate.title || "";
+  } else c.style.display = "none";
+  if (s.recording) setStatus("Listening... (release / click again to send)", true);
+  document.title = s.game ? `Game Guide · ${s.game}` : "Game Guide";
+  emptyState();
+}
+
+// Sense panel. s.sense = {enabled, range, sound, sound_on, muted_until, helper_ok, helper_age_s, nearest, count,
+//   engine: "ue"|"re"|null (which helper the game uses; "re" has no F3 discovery list)};
+// s.sense_helper_installed = the current game has a helper. muted_until is a time (seconds or ms) or null/0.
+function muteLeftMin(until) {
+  if (!until) return 0;
+  const ms = until > 1e12 ? until : until * 1000;   // accept both epoch seconds and ms
+  return Math.ceil((ms - Date.now()) / 60000);
+}
+// Quest path target from s.sense.target = {dist, floors, kind} or null -> " · target 42 m ↑2" (or "").
+function targetText(t) {
+  if (!t || t.dist == null || !isFinite(+t.dist)) return "";
+  let x = ` · target ${Math.round(+t.dist)} m`;
+  const f = Math.round(+t.floors || 0);
+  if (f > 0) x += ` ↑${f}`; else if (f < 0) x += ` ↓${-f}`;
+  return x;
+}
+// s.sense.elsewhere = {label, map} or null: the tracked main quest is on another map (no trail then)
+//   -> " · Main quest is in another area (PangZhen)" (or "" when not).
+function elsewhereText(e) {
+  if (!e || typeof e !== "object") return "";
+  const m = typeof e.map === "string" ? e.map.trim() : "";
+  return " · Main quest is in another area" + (m ? ` (${m})` : "");
+}
+function applySense(s) {
+  const se = s.sense || {};
+  const has = !!s.sense_helper_installed;
+  $("#senseOn").classList.toggle("on", !!se.enabled);
+  $("#senseOn").textContent = se.enabled ? "Sense: on" : "Sense: off";
+  if (document.activeElement !== $("#senseRange") && se.range) $("#senseRange").value = se.range;
+  $("#senseRangeVal").textContent = $("#senseRange").value + " m";
+  if (document.activeElement !== $("#senseSound") && se.sound) $("#senseSound").value = se.sound;
+  $("#senseSoundOn").classList.toggle("on", se.sound_on === true);
+  $("#senseSoundOn").textContent = se.sound_on === true ? "Sound: on" : "Sound: off";
+  const left = muteLeftMin(se.muted_until);
+  $("#senseMute").classList.toggle("on", left > 0);
+  $("#senseMute").textContent = left > 0 ? `Muted, ${left} min left (click to unmute)` : "Mute 5 min";
+  $("#senseMute").title = left > 0 ? "Click to hear the sound again" : "No sound for 5 minutes (the pulse on screen stays)";
+  const pathOn = se.path_enabled !== false;
+  $("#sensePath").classList.toggle("on", pathOn);
+  $("#sensePath").textContent = pathOn ? "Quest path: on" : "Quest path: off";
+  $("#sensePath").style.display = se.path_available === false ? "none" : "";
+  // "Quest path follows the ground": only for Unreal helpers whose Sense mod folder exists (route_available).
+  const routeOn = se.route_enabled !== false;
+  $("#senseRoute").classList.toggle("on", routeOn);
+  $("#senseRoute").textContent = routeOn ? "Quest path follows the ground: on" : "Quest path follows the ground: off";
+  $("#senseRoute").style.display = se.route_available === true && se.path_available !== false ? "" : "none";
+  const st = $("#senseStatus");
+  let text, short;
+  if (!s.game) { text = "Pick a game first."; short = ""; }
+  else if (!has) { text = "No helper for this game yet."; short = " - no helper"; }
+  else if (!se.enabled) { text = "Helper installed. Sense is off."; short = " - off"; }
+  else if (se.helper_ok) {
+    const n = se.count || 0;
+    text = n ? `Helper running - ${n} item${n === 1 ? "" : "s"} near` : "Helper running - nothing near";
+    if (se.nearest && se.nearest.dist != null) text += ` (nearest ${Math.round(se.nearest.dist)} m)`;
+    short = n ? ` - ${n} near` : "";
+  } else { text = "Helper not running - it starts with the game. Start (or restart) the game."; short = " - helper not running"; }
+  if (has && se.helper_ok && pathOn) text += se.elsewhere ? elsewhereText(se.elsewhere) : targetText(se.target);
+  st.textContent = text;
+  st.classList.toggle("off", !has || !se.enabled || !se.helper_ok);
+  $("#senseState").textContent = short;
+  // The CSS hides these by default, so an empty style.display would hide them too: set a real value.
+  $("#senseInstall").style.display = s.game && !has ? "inline-block" : "none";
+  if (!$("#senseInstall").disabled) $("#senseInstall").textContent = "Install helper";
+  $("#senseUninstall").style.display = has ? "inline" : "none";
+  // Only the Unreal helper (engine "ue") has the F3 discovery dump; the RE Engine helper has no F3.
+  const disc = has && se.engine !== "re";
+  $("#senseDiscovery").style.display = disc ? "inline" : "none";
+  if (!disc) $("#senseDiscoveryText").style.display = "none";
+  const hf3 = $("#helpF3");
+  if (hf3) hf3.style.display = se.engine === "re" ? "none" : "";
+}
+// The mute countdown keeps counting between state pushes.
+setInterval(() => { if (S.sense) applySense(S); }, 15000);
+
+const es = new EventSource("/events");
+es.onmessage = e => {
+  const ev = JSON.parse(e.data);
+  switch (ev.type) {
+    case "state":
+      // The app was restarted (maybe updated): reload so the window shows the newest version.
+      if (window.bootId && ev.boot && ev.boot !== window.bootId) { location.reload(); return; }
+      window.bootId = window.bootId || ev.boot;
+      applyState(ev); break;
+    case "history": log.innerHTML = ""; ev.items.forEach(addMsg); emptyState(); break;
+    case "read": addRead(ev); break;
+    case "user": addUser(ev); live = null; liveText = ""; setStatus("Thinking...", true); break;
+    case "status": setStatus(ev.text, !!ev.text); break;
+    case "reset": if (live) { live.remove(); live = null; } liveText = ""; break;
+    case "token":
+      if (!live) live = addBot({content: ""});
+      liveText += ev.text; const stick = atBottom(); fillBot(live, {content: liveText}, true); if (stick) scroll(true);
+      setStatus("Answering...", true); break;
+    case "done": {
+      if (!live) live = addBot(ev); else fillBot(live, ev);
+      const d = live; live = null; liveText = ""; setStatus(""); scroll(true);
+      break;
+    }
+    case "step": { const d = lastAnswer(); if (d) { d._all = false; d._pos = ev.pos; fillBot(d, d._meta); scroll(true); } break; }
+    case "transcript": $("#text").value = ev.text; $("#text").focus(); setStatus(""); break;
+    case "toast": toast(ev.text); break;
+  }
+};
+es.onerror = () => setStatus("Lost connection to Game Guide — is it still running?");
+
+function send() {
+  const t = $("#text").value.trim(); if (!t) return;
+  if (!S.game && !$("#gameInput").value.trim()) { toast("Type the game you're playing at the top first"); $("#gameInput").focus(); return; }
+  if ($("#gameInput").value.trim() && $("#gameInput").value.trim() !== S.game) setGame();
+  post("/api/ask", {text: t}); $("#text").value = ""; autosize();
+}
+function setGame() { const g = $("#gameInput").value.trim(); if (g) post("/api/set", {game: g}); }
+function autosize() { const t = $("#text"); t.style.height = "auto"; t.style.height = Math.min(140, t.scrollHeight) + "px"; }
+
+$("#send").onclick = send;
+$("#text").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } });
+$("#text").addEventListener("input", autosize);
+$("#setGame").onclick = setGame;
+$("#gameInput").addEventListener("keydown", e => { if (e.key === "Enter") { setGame(); $("#text").focus(); } });
+$("#gameInput").addEventListener("change", setGame);
+document.querySelectorAll("#levels button").forEach(b => b.onclick = () => post("/api/set", {level: b.dataset.l}));
+$("#speak").onclick = () => post("/api/set", {speak: !S.speak});
+$("#startup").onclick = () => post("/api/set", {startup: !S.startup});
+$("#auto").onclick =() => post("/api/set", {auto_detect: !S.auto_detect});
+$("#overlayBtn").onclick = () => post("/api/set", {overlay: !S.overlay});
+// Pick window: every click re-scans the open windows (so a game started later shows up).
+async function refreshPicker() {
+  const p = $("#picker");
+  p.classList.add("open");
+  $("#winList").innerHTML = `<div class="small" style="padding:6px">Looking at open windows...</div>`;
+  const wins = await (await fetch("/api/windows")).json();
+  $("#winList").innerHTML = wins.length ? "" :
+    `<div class="small" style="padding:6px">No game windows found. Start the game, then click Pick window again.</div>`;
+  wins.forEach(w => {
+    const d = document.createElement("div"); d.className = "win";
+    const name = w.known || w.name;
+    d.innerHTML = `<div><b>${esc(name)}</b>${w.how === "steam" ? '<span class="badge">Steam</span>' : ""}` +
+      `${w.known ? '<span class="badge known">remembered</span>' : ""}</div>` +
+      `<div class="sub">${esc(w.exe)} · ${esc(w.title)}</div>`;
+    d.onclick = () => { p.classList.remove("open"); post("/api/set", {game: name, exe: w.exe}); };
+    $("#winList").appendChild(d);
+  });
+}
+$("#pick").onclick = e => { e.stopPropagation(); refreshPicker(); };
+document.addEventListener("click", e => { if (!$("#picker").contains(e.target)) $("#picker").classList.remove("open"); });
+$("#readBtn").onclick = () => post("/api/read");
+$("#keysBtn").onclick = () => {
+  const [talk, shot] = S.hotkeys || ["f10", "f11"];
+  $("#kk1").textContent = talk.toUpperCase(); $("#kk2").textContent = shot.toUpperCase();
+  $("#kk3").textContent = (S.read_key || "f8").toUpperCase();
+  $("#kk4").textContent = (S.next_key || "f7").toUpperCase();
+  $("#keys").classList.add("open");
+};
+$("#keysClose").onclick = () => $("#keys").classList.remove("open");
+// Choose your brain: opens by itself on first run and from the Brain button. Nothing signs in by itself.
+const BS_NAMES = {claude: "Claude", gemini: "Gemini", local: "Local"};
+const BS_STATUS = {claude: "#bsClaudeStatus", gemini: "#bsGeminiStatus", local: "#bsLocalStatus"};
+let bsOrder = [], bsPoll = null;
+function bsShow(name, st) {
+  if (!st) return;
+  const el = $(BS_STATUS[name]);
+  el.textContent = st.text || "";
+  el.className = "bsStatus" + (st.ok === true ? " ok" : st.ok === false ? " bad" : "");
+  if (name === "local" && st.pull) $("#bsLocalPull").textContent = st.pull.join("\n");
+}
+function bsApply(d) {
+  if (d.order) bsOrder = d.order;
+  Object.keys(BS_STATUS).forEach(n => bsShow(n, d[n]));
+  document.querySelectorAll("#brainSetup .bs").forEach(c => c.classList.toggle("first", c.dataset.b === bsOrder[0]));
+  $("#bsOrder").textContent = bsOrder.length ? "Now: " + bsOrder.map(n => BS_NAMES[n] || n).join(", then ") : "";
+}
+async function bsCheck(only) {
+  // one request per brain: each line updates as soon as its own check is done (Claude's can take 20 s)
+  const names = only ? [only] : Object.keys(BS_STATUS);
+  names.forEach(n => bsShow(n, {ok: null, text: "Checking..."}));
+  let failed = false;
+  await Promise.all(names.map(async n => {
+    try { bsApply(await (await fetch("/api/brains/status?only=" + n)).json()); }
+    catch (_) { failed = true; }
+  }));
+  if (failed) toast("Could not check the brains. Is Game Guide still running?");
+}
+async function bsPost(url, body) {
+  let d = {};
+  try {
+    const r = await post(url, body);
+    try { d = await r.json(); } catch (_) {}
+    if (!r.ok && !d.error) d.error = "Something went wrong (error " + r.status + ").";
+  } catch (_) { d.error = "Could not reach Game Guide. Is it still running?"; }
+  return d;
+}
+function openBrains(first) {
+  window.brainShown = true;
+  $("#bsSkip").textContent = first ? "Skip for now" : "Close";
+  $("#brainSetup").classList.add("open");
+  bsCheck();
+}
+async function closeBrains() {
+  $("#brainSetup").classList.remove("open");
+  bsPoll = null;
+  await bsPost("/api/brains/skip");        // remembered: it won't open by itself again
+}
+$("#brainBtn").onclick = () => openBrains(false);
+$("#bsSkip").onclick = closeBrains;
+$("#bsClose").onclick = closeBrains;
+document.querySelectorAll("#brainSetup [data-check]").forEach(b => b.onclick = () => bsCheck(b.dataset.check));
+document.querySelectorAll("#brainSetup [data-use]").forEach(b => b.onclick = async () => {
+  const d = await bsPost("/api/brains/use", {brain: b.dataset.use});
+  if (d.error) { toast(d.error); return; }
+  bsApply(d);
+  $("#brainSetup").classList.remove("open");
+  bsPoll = null;
+  toast(BS_NAMES[d.order[0]] + " answers first. Backups: " + d.order.slice(1).map(n => BS_NAMES[n] || n).join(", then ") + ".");
+});
+$("#bsGeminiTest").onclick = async () => {
+  bsShow("gemini", {ok: null, text: "Testing..."});
+  const d = await bsPost("/api/brains/gemini", {key: $("#bsGeminiKey").value.trim()});
+  if (d.error) { toast(d.error); bsShow("gemini", {ok: null, text: d.error}); return; }
+  $("#bsGeminiKey").value = "";
+  bsApply(d);
+};
+$("#bsClaudeLogin").onclick = async () => {
+  const d = await bsPost("/api/brains/claude-login");
+  if (!d.ok) { toast(d.error || "Could not open the sign-in window."); return; }
+  bsShow("claude", {ok: null, text: "Sign in in the window that just opened. This updates by itself when you are done."});
+  // re-check every 5 s for up to 3 minutes; each check waits for the one before (a slow CLI never piles up).
+  // A new Sign in, Use this or closing the panel replaces bsPoll, which ends this run.
+  const run = bsPoll = {};
+  let tries = 0;
+  (async function again() {
+    await new Promise(r => setTimeout(r, 5000));
+    if (bsPoll !== run) return;
+    if (++tries > 36 || !$("#brainSetup").classList.contains("open")) { bsPoll = null; return; }
+    try {
+      const s = await (await fetch("/api/brains/status?only=claude")).json();
+      if (bsPoll !== run) return;
+      if (s.claude && s.claude.ok) { bsApply(s); bsPoll = null; return; }
+    } catch (_) {}
+    again();
+  })();
+};
+$("#keys").onclick = e => { if (e.target.id === "keys") $("#keys").classList.remove("open"); };
+document.addEventListener("keydown", e => { if (e.key === "Escape") $("#keys").classList.remove("open"); });
+$("#voiceSel").onchange = () => post("/api/set", {voice: $("#voiceSel").value});
+$("#readMode").onchange = () => post("/api/set", {read_mode: $("#readMode").value});
+$("#voiceTest").onclick = () => post("/api/set", {test_voice: true});
+$("#clear").onclick = () => { if (confirm("Start a new chat for this game? (Progress notes are kept.)")) post("/api/set", {clear_chat: true}); };
+$("#mic").onclick = () => post(S.recording ? "/api/mic/stop?send=1" : "/api/mic/start");
+$("#cam").onclick = () => post("/api/screenshot");
+$("#shotDrop").onclick = () => post("/api/set", {drop_shot: -1});
+$("#solve").onclick = () => post("/api/solution");
+$("#retry").onclick = () => post("/api/retry");
+$("#whereBtn").onclick = () => post("/api/where");
+// Open-world: the server picks the pending map screenshot or the saved last map itself, so no body is needed.
+$("#whatsleftBtn").onclick = () => post("/api/whatsleft");
+$("#bossBtn").onclick = () => post("/api/ask", {text: "Boss tips for the boss I'm facing right now.", mode: "boss"});
+$("#dossierBox").addEventListener("toggle", async () => {
+  if (!$("#dossierBox").open) return;
+  const d = await (await fetch("/api/dossier")).json();
+  $("#dossier").innerHTML = d.text ? md(d.text) : (d.building ? "<i>Being researched right now - check back in a minute.</i>" : "<i>No dossier yet.</i>");
+});
+$("#dossierRebuild").onclick = e => { e.preventDefault(); post("/api/dossier"); toast("Rebuilding the dossier in the background"); };
+// Sense: the server answers {"ok": true} or {"ok": false, "error": "plain reason"}; show the reason as a toast.
+async function postSense(url, body) {
+  try {
+    const r = await post(url, body);
+    let d = {};
+    try { d = await r.json(); } catch (_) {}
+    if (!r.ok || d.ok === false) toast(d.error || `That did not work (${r.status})`);
+    return d;
+  } catch (e) { toast("Could not reach Game Guide"); return {}; }
+}
+$("#senseOn").onclick = () => postSense("/api/sense", {enabled: !(S.sense && S.sense.enabled)});
+$("#senseRange").addEventListener("input", () => { $("#senseRangeVal").textContent = $("#senseRange").value + " m"; });
+$("#senseRange").addEventListener("change", () => postSense("/api/sense", {range: +$("#senseRange").value}));
+$("#senseSound").onchange = () => postSense("/api/sense", {sound: $("#senseSound").value});
+$("#sensePath").onclick = () => postSense("/api/sense", {path: !(S.sense && S.sense.path_enabled !== false)});
+$("#senseRoute").onclick = () => postSense("/api/sense", {route: !(S.sense && S.sense.route_enabled !== false)});
+$("#senseSoundOn").onclick = () => postSense("/api/sense", {sound_on: !(S.sense && S.sense.sound_on === true)});
+$("#senseTest").onclick =() => postSense("/api/sense", {sound: $("#senseSound").value, test: true});
+$("#senseMute").onclick = () => {
+  const muted = muteLeftMin(S.sense && S.sense.muted_until) > 0;
+  postSense("/api/sense", {mute_minutes: muted ? 0 : 5});
+};
+$("#senseInstall").onclick = async () => {
+  if (!S.game) { toast("Pick a game first"); return; }
+  if (!confirm(`Install the Sense helper for ${S.game}?\n\n` +
+               "- The game must be CLOSED (close it fully first).\n" +
+               "- A backup of the changed game files is made before anything is touched.\n" +
+               "- The helper only reads the game, it never changes it.\n\n" +
+               "Install now?")) return;
+  $("#senseInstall").disabled = true; $("#senseInstall").textContent = "Installing...";
+  const d = await postSense("/api/sense/install", {game: S.game});
+  $("#senseInstall").disabled = false; $("#senseInstall").textContent = "Install helper";
+  if (d.ok) toast(S.sense && S.sense.engine === "re"
+    ? "Helper installed. Start the game; Sense starts with it (no key to press)."
+    : "Helper installed. Start the game, then press F3 once in game for the discovery list.");
+};
+$("#senseUninstall").onclick = async e => {
+  e.preventDefault();
+  if (!confirm(`Uninstall the Sense helper for ${S.game}?\n\nThe game must be closed. The game then starts without the helper again.`)) return;
+  const d = await postSense("/api/sense/uninstall", {game: S.game});
+  if (d.ok) toast("Helper removed");
+};
+$("#senseDiscovery").onclick = async e => {
+  e.preventDefault();
+  const box = $("#senseDiscoveryText");
+  if (box.style.display === "block") { box.style.display = "none"; return; }
+  box.style.display = "block"; box.textContent = "Loading...";
+  try {
+    const d = await (await fetch("/api/sense/discovery")).json();
+    box.textContent = d.text ? d.text : "No list yet. Start the game with the helper and press F3 once in game, then look again.";
+  } catch (_) { box.textContent = "Could not load the list."; }
+};
+$("#candSave").onclick = () => post("/api/set", {game: $("#candName").value, exe: S.candidate.exe});
+$("#candNo").onclick = () => post("/api/set", {dismiss_candidate: true});
+$("#notesSave").onclick = () => { post("/api/set", {notes: $("#notes").value}); toast("Notes saved"); };
+document.addEventListener("keydown", e => { if (e.key === "Escape" && S.busy) post("/api/set", {stop: true}); });
+</script>
+</body>
+</html>

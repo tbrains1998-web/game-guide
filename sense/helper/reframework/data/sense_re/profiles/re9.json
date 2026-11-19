@@ -1,0 +1,41 @@
+{
+  "game": "re9",
+  "_note": "Resident Evil Requiem. ALL type names, rules and getters here are UNVERIFIED on the 2026-10-12 build: they come from type-name lists and web references (Archipelago RE9 client 2026-10-26, Namsku trainer). If an entry finds nothing it just does nothing; the helper still guesses from names and learns.",
+  "item_words": [],
+  "collectible_words": ["FragileSymbol"],
+  "door_words": ["UseKeyItem"],
+  "exclude_words": [],
+  "not_items": ["app.ItemManager", "app.GmItemBoxV2", "app.GmItemControl", "app.InteractManager", "app.InteractTrigger"],
+  "seeds": [
+    {"name": "app.ItemCore", "kind": "pickup",
+     "_note": "unverified: get_Setupped (placed in the world) from the Archipelago client; remove the require rule if no items show",
+     "require": [{"type": "call", "fn": "get_Setupped", "is": true}],
+     "gone": [{"type": "vanish"}, {"type": "draw", "is": false}]},
+    {"name": "app.GmItemDrop", "kind": "pickup",
+     "_note": "unverified: breakable box with loot; _IsItemDrop true = the loot already dropped out",
+     "gone": [{"type": "vanish"}, {"type": "bool", "prop": "_IsItemDrop", "is": true}]},
+    {"name": "app.GmMultipleItemDrop", "kind": "pickup",
+     "_note": "unverified: same idea as GmItemDrop",
+     "gone": [{"type": "vanish"}, {"type": "bool", "prop": "_IsItemDrop", "is": true}]},
+    {"name": "app.GmFragileSymbol", "kind": "collectible",
+     "_note": "unverified: Mr. Raccoon collectible",
+     "gone": [{"type": "vanish"}, {"type": "draw", "is": false}]},
+    {"name": "app.GmSafe", "kind": "collectible",
+     "_note": "unverified: safe; opened state not known yet (learned by watching)",
+     "gone": [{"type": "vanish"}]}
+  ],
+  "_seeds_not_used": "app.GmItemInteractable and app.InteractActionItemPickup probably sit on the same objects as app.ItemCore (would give double rings); add them only if ItemCore finds nothing.",
+  "doors": [
+    {"name": "app.GmDoorV3", "unlocked": null, "_note": "unverified; unlocked rule unknown, learned by watching"},
+    {"name": "app.GmDoubleDoorV3", "unlocked": null, "_note": "unverified"},
+    {"name": "app.GmSlideDoorV2", "unlocked": null, "_note": "unverified"},
+    {"name": "app.GmLockV2", "unlocked": null, "_note": "unverified"},
+    {"name": "app.GmUseKeyItemV3", "unlocked": null, "_note": "unverified"},
+    {"name": "app.GmMultipleUseKeyItem", "unlocked": null, "_note": "unverified"}
+  ],
+  "target": {"type": "re_path", "steps": null, "kind": "quest",
+             "_note": "unverified: no getter for the current objective is known yet. Candidates: app.ObjectiveManager, app.LevelDestinationManager, app.NavigationManager. Steps look like [{\"single\":\"app.X\"},{\"call\":\"get_Y\"},{\"field\":\"_z\"},{\"item\":0}] and must end at a Vector3f, a Transform, a GameObject or a component."},
+  "player_hint": null,
+  "fov_axis": "v",
+  "_fov_note": "unverified: RE camera get_FOV is taken as the vertical angle; switch to \"h\" if rings sit too far from/too close to the screen centre"
+}

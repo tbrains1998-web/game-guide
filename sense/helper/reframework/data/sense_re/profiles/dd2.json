@@ -1,0 +1,43 @@
+{
+  "game": "dd2",
+  "_note": "Dragon's Dogma 2. ALL type names, rules and getters here are UNVERIFIED as component types: gimmick ids and getters come from community DD2 REFramework scripts (app.GimmickManager lists) and type-name lists. DD2 gimmick types have number names (app.Gm80_001), so most are found through the base type app.GimmickBase and learning.",
+  "base_types": ["app.GimmickBase", "app.GimmickSimpleBase"],
+  "_base_types_note": "unverified: parent types of DD2 gimmicks; scan may use them to find number-named gimmicks",
+  "item_words": [],
+  "collectible_words": [],
+  "door_words": ["OpenDoor", "TunnelGate", "DoorLock"],
+  "exclude_words": ["Pawn", "Rental", "Network", "Online"],
+  "not_items": ["app.GimmickManager", "app.ChestOpenCloseChecker", "app.RDLDDoorOpenChecker"],
+  "seeds": [
+    {"name": "app.Gm80_001", "kind": "collectible", "parent": "app.GimmickBase",
+     "_note": "unverified: chest (TreasureBox); get_IsOpenedFreeBit from community scripts",
+     "gone": [{"type": "vanish"}, {"type": "call", "fn": "get_IsOpenedFreeBit", "is": true}]},
+    {"name": "app.Gm82_000", "kind": "pickup", "parent": "app.GimmickBase",
+     "_note": "unverified: fixed placed item",
+     "gone": [{"type": "vanish"}, {"type": "draw", "is": false}]},
+    {"name": "app.Gm82_000_001", "kind": "pickup", "parent": "app.GimmickBase",
+     "_note": "unverified: dropped item on the ground",
+     "gone": [{"type": "vanish"}, {"type": "draw", "is": false}]},
+    {"name": "app.Gm82_009", "kind": "pickup", "parent": "app.GimmickBase",
+     "_note": "unverified: gather spot (herbs, ore); get_IsEndGather from community scripts",
+     "gone": [{"type": "vanish"}, {"type": "call", "fn": "get_IsEndGather", "is": true}]},
+    {"name": "app.Gm82_036", "kind": "collectible", "parent": "app.GimmickBase",
+     "_note": "unverified: Seeker's Token; get_IsGetFreeBit from community scripts",
+     "gone": [{"type": "vanish"}, {"type": "call", "fn": "get_IsGetFreeBit", "is": true}]},
+    {"name": "app.quest.gimmick.OptionTreasureBox", "kind": "collectible",
+     "_note": "unverified: quest treasure box option",
+     "gone": [{"type": "vanish"}, {"type": "call", "fn": "get_IsOpenedFreeBit", "is": true}]}
+  ],
+  "doors": [
+    {"name": "app.OpenDoorController", "unlocked": null, "_note": "unverified; unlocked rule unknown, learned by watching"},
+    {"name": "app.lod.adapt.OpenDoor", "unlocked": null, "_note": "unverified"},
+    {"name": "app.TunnelGate", "unlocked": null, "_note": "unverified"},
+    {"name": "app.quest.gimmick.OptionDoorLock", "unlocked": null, "_note": "unverified"}
+  ],
+  "target": {"type": "re_path", "steps": null, "kind": "quest",
+             "_note": "unverified: no getter for the tracked quest point is known yet. Candidates: app.QuestManager, app.DestinationPointManager, app.MarkerManager."},
+  "player_hint": "app.CharacterManager.get_ManualPlayer",
+  "_player_hint_note": "from community DD2 scripts: app.CharacterManager:get_ManualPlayer()",
+  "fov_axis": "v",
+  "_fov_note": "unverified: RE camera get_FOV is taken as the vertical angle"
+}
